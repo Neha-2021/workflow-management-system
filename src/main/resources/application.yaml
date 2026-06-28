@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: workflow-management-system
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/workflow_orchestrator_db
+    username: workflow_orchestrator_user
+    password: workflow_orchestrator_password
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+    show-sql: true
+
+  flyway:
+    enabled: true
