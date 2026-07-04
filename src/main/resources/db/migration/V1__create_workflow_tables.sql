@@ -20,6 +20,7 @@ CREATE TABLE workflow_step
     sequence_number INTEGER NOT NULL,
     activity_name VARCHAR(100) NOT NULL,
     timeout_seconds INTEGER,
+    version BIGINT NOT NULL DEFAULT 0,
 
     CHECK (sequence_number > 0),
 
