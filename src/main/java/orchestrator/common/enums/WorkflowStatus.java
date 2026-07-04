@@ -1,8 +1,8 @@
 package orchestrator.common.enums;
 
 public enum WorkflowStatus {
-    CREATED,
-    RUNNING,
-    FAILED,
-    COMPLETED
+  CREATED,
+  RUNNING,
+  FAILED,
+  COMPLETED
 }

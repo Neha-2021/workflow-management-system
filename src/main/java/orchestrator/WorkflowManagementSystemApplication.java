@@ -6,8 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class WorkflowManagementSystemApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(WorkflowManagementSystemApplication.class, args);
-	}
-
+  public static void main(String[] args) {
+    SpringApplication.run(WorkflowManagementSystemApplication.class, args);
+  }
 }
