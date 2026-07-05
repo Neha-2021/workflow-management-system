@@ -9,8 +9,8 @@ CREATE TABLE workflow_definition
     updated_at TIMESTAMPTZ NOT NULL,
     version BIGINT NOT NULL DEFAULT 0,
 
-    CONSTRAINT uk_name_version
-        UNIQUE(name, version)
+    CONSTRAINT uk_name_definition_version
+        UNIQUE(name, definition_version)
 );
 
 CREATE TABLE workflow_step
