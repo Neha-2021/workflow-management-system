@@ -25,38 +25,34 @@ class GlobalExceptionHandlerTest {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getStatus()).isEqualTo(500);
-    assertThat(response.getBody().getError()).isEqualTo("Internal Server Error");
-    assertThat(response.getBody().getErrorMessage()).isEqualTo("Unexpected error occurred");
+    assertThat(response.getBody().status()).isEqualTo(500);
+    assertThat(response.getBody().error()).isEqualTo("Internal Server Error");
+    assertThat(response.getBody().errorMessage()).isEqualTo("Unexpected error occurred");
   }
 
   @Test
-  void shouldHandleInvalidWorkflowDefinitionException() {
+  void shouldHandleBadRequestException() {
 
     GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
     InvalidWorkflowDefinitionException exception =
         new InvalidWorkflowDefinitionException("Duplicate sequence numbers");
 
-    ResponseEntity<ErrorResponse> response =
-        handler.handleInvalidWorkflowDefinitionException(exception);
+    ResponseEntity<ErrorResponse> response = handler.handleBadRequestException(exception);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getStatus()).isEqualTo(400);
-    assertThat(response.getBody().getError()).isEqualTo("Invalid workflow definition request");
-    assertThat(response.getBody().getErrorMessage()).isEqualTo("Duplicate sequence numbers");
+    assertThat(response.getBody().status()).isEqualTo(400);
+    assertThat(response.getBody().error()).isEqualTo("Bad Request");
+    assertThat(response.getBody().errorMessage()).isEqualTo("Duplicate sequence numbers");
   }
 
   @Test
   void shouldHandleMethodArgumentNotValidException() {
 
     GlobalExceptionHandler handler = new GlobalExceptionHandler();
-
     MethodArgumentNotValidException exception = mock(MethodArgumentNotValidException.class);
-
     BindingResult bindingResult = mock(BindingResult.class);
-
     FieldError fieldError = new FieldError("workflow", "name", "must not be blank");
 
     given(exception.getBindingResult()).willReturn(bindingResult);
@@ -67,8 +63,8 @@ class GlobalExceptionHandlerTest {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getStatus()).isEqualTo(400);
-    assertThat(response.getBody().getError()).isEqualTo("Invalid request");
-    assertThat(response.getBody().getErrorMessage()).isEqualTo("name: must not be blank");
+    assertThat(response.getBody().status()).isEqualTo(400);
+    assertThat(response.getBody().error()).isEqualTo("Invalid request");
+    assertThat(response.getBody().errorMessage()).isEqualTo("name: must not be blank");
   }
 }

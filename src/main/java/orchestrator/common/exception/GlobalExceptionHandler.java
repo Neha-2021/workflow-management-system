@@ -40,14 +40,36 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
   }
 
-  @ExceptionHandler(InvalidWorkflowDefinitionException.class)
-  public ResponseEntity<ErrorResponse> handleInvalidWorkflowDefinitionException(
-      InvalidWorkflowDefinitionException ex) {
-    ErrorResponse errorResponse =
-        new ErrorResponse(
-            HttpStatus.BAD_REQUEST.value(), "Invalid workflow definition request", ex.getMessage());
+  @ExceptionHandler(BadRequestException.class)
+  public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException ex) {
 
-    log.error("Invalid workflow definition request", ex);
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    log.warn("Bad request: {}", ex.getMessage());
+
+    ErrorResponse response =
+        new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Bad Request", ex.getMessage());
+
+    return ResponseEntity.badRequest().body(response);
+  }
+
+  @ExceptionHandler(NotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleNotFoundException(NotFoundException ex) {
+
+    log.warn("Resource not found: {}", ex.getMessage());
+
+    ErrorResponse response =
+        new ErrorResponse(HttpStatus.NOT_FOUND.value(), "Not Found", ex.getMessage());
+
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+  }
+
+  @ExceptionHandler(ConflictException.class)
+  public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex) {
+
+    log.warn("Conflict: {}", ex.getMessage());
+
+    ErrorResponse response =
+        new ErrorResponse(HttpStatus.CONFLICT.value(), "Conflict", ex.getMessage());
+
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
   }
 }
