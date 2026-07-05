@@ -2,11 +2,15 @@ package orchestrator.workflow.service;
 
 import java.util.*;
 import orchestrator.common.exception.InvalidWorkflowDefinitionException;
+import orchestrator.common.exception.WorkflowDefinitionNotFoundException;
+import orchestrator.workflow.dto.request.ActivateWorkflowRequest;
 import orchestrator.workflow.dto.request.CreateWorkflowDefinitionRequest;
 import orchestrator.workflow.dto.request.CreateWorkflowStepRequest;
+import orchestrator.workflow.dto.request.DeactivateWorkflowRequest;
 import orchestrator.workflow.dto.response.CreateWorkflowDefinitionResponse;
 import orchestrator.workflow.entity.WorkflowDefinitionEntity;
 import orchestrator.workflow.entity.WorkflowStepEntity;
+import orchestrator.workflow.enums.WorkflowDefinitionStatus;
 import orchestrator.workflow.repository.WorkflowDefinitionRepository;
 import orchestrator.workflow.repository.WorkflowStepRepository;
 import org.slf4j.Logger;
@@ -49,6 +53,81 @@ public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService 
     return response;
   }
 
+  @Transactional
+  @Override
+  public void activateWorkflow(ActivateWorkflowRequest request) {
+    String workflowName = request.workflowName();
+    Optional<WorkflowDefinitionEntity> existingEntity =
+        workflowDefinitionRepository.findByNameAndDefinitionVersion(
+            workflowName, request.version());
+
+    if (existingEntity.isEmpty()) {
+      log.warn(
+          "WorkflowDefinitionServiceImpl | No workflow definition found by name: {}", workflowName);
+      throw new WorkflowDefinitionNotFoundException(
+          String.format("Workflow '%s' version '%d' not found", workflowName, request.version()));
+    }
+
+    if (existingEntity.get().getStatus() == WorkflowDefinitionStatus.ACTIVE) {
+      log.info("WorkflowDefinitionServiceImpl | Workflow definition is already active");
+      return;
+    }
+
+    Optional<WorkflowDefinitionEntity> currentActiveEntity = fetchActiveWorkflow(workflowName);
+
+    if (currentActiveEntity.isPresent()) {
+      log.info(
+          "WorkflowDefinitionServiceImpl | Active workflow definition found with name: '{}' and "
+              + "version '{}'",
+          workflowName,
+          currentActiveEntity.get().getDefinitionVersion());
+      currentActiveEntity.get().setStatus(WorkflowDefinitionStatus.INACTIVE);
+      workflowDefinitionRepository.save(currentActiveEntity.get());
+      log.info(
+          "WorkflowDefinitionServiceImpl | Deactivated the active version {}",
+          currentActiveEntity.get().getDefinitionVersion());
+    }
+
+    existingEntity.get().setStatus(WorkflowDefinitionStatus.ACTIVE);
+    workflowDefinitionRepository.save(existingEntity.get());
+
+    log.info(
+        "WorkflowDefinitionServiceImpl | Activated the workflow: '{}' with version {}",
+        workflowName,
+        existingEntity.get().getDefinitionVersion());
+  }
+
+  @Override
+  public void deactivateWorkflow(DeactivateWorkflowRequest request) {
+    String workflowName = request.workflowName();
+    Optional<WorkflowDefinitionEntity> existingEntity = findByWorkflowName(workflowName);
+
+    if (existingEntity.isEmpty()) {
+      log.warn(
+          "WorkflowDefinitionServiceImpl | No workflow definition found by name: {}", workflowName);
+      throw new WorkflowDefinitionNotFoundException(
+          String.format("Workflow '%s' not found", workflowName));
+    }
+    Optional<WorkflowDefinitionEntity> existingActiveEntity = fetchActiveWorkflow(workflowName);
+
+    if (existingActiveEntity.isEmpty()) {
+      log.info(
+          "WorkflowDefinitionServiceImpl | Workflow definition with name {} is already inactive",
+          workflowName);
+      return;
+    }
+    existingActiveEntity.get().setStatus(WorkflowDefinitionStatus.INACTIVE);
+    workflowDefinitionRepository.save(existingActiveEntity.get());
+    log.info(
+        "WorkflowDefinitionServiceImpl | Deactivated the active version {}",
+        existingActiveEntity.get().getDefinitionVersion());
+  }
+
+  private Optional<WorkflowDefinitionEntity> fetchActiveWorkflow(String workflowName) {
+    return workflowDefinitionRepository.findByNameAndStatus(
+        workflowName, WorkflowDefinitionStatus.ACTIVE);
+  }
+
   private void validateSteps(List<CreateWorkflowStepRequest> createWorkflowStepRequest) {
     List<Integer> sequenceNumbers =
         new ArrayList<>(
@@ -78,8 +157,7 @@ public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService 
   }
 
   private Integer determineDefinitionVersion(String workflowName) {
-    Optional<WorkflowDefinitionEntity> workflowDefinitionEntity =
-        workflowDefinitionRepository.findTopByNameOrderByDefinitionVersionDesc(workflowName);
+    Optional<WorkflowDefinitionEntity> workflowDefinitionEntity = findByWorkflowName(workflowName);
     if (workflowDefinitionEntity.isEmpty()) {
       log.info(
           "WorkflowDefinitionServiceImpl | No existing workflow definition found with name: {}",
@@ -91,10 +169,18 @@ public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService 
     return (workflowDefinitionEntity.get().getDefinitionVersion() + 1);
   }
 
+  private Optional<WorkflowDefinitionEntity> findByWorkflowName(String workflowName) {
+    return workflowDefinitionRepository.findTopByNameOrderByDefinitionVersionDesc(workflowName);
+  }
+
   private WorkflowDefinitionEntity buildWorkflowDefinitionEntity(
       UUID workflowId, Integer definitionVersion, CreateWorkflowDefinitionRequest request) {
     return new WorkflowDefinitionEntity(
-        workflowId, definitionVersion, request.name(), request.description());
+        workflowId,
+        definitionVersion,
+        request.name(),
+        request.description(),
+        WorkflowDefinitionStatus.INACTIVE);
   }
 
   private List<WorkflowStepEntity> buildStepEntities(

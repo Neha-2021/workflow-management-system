@@ -10,8 +10,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.UUID;
+import orchestrator.workflow.dto.request.ActivateWorkflowRequest;
 import orchestrator.workflow.dto.request.CreateWorkflowDefinitionRequest;
 import orchestrator.workflow.dto.request.CreateWorkflowStepRequest;
+import orchestrator.workflow.dto.request.DeactivateWorkflowRequest;
 import orchestrator.workflow.dto.response.CreateWorkflowDefinitionResponse;
 import orchestrator.workflow.service.WorkflowDefinitionService;
 import org.junit.jupiter.api.Test;
@@ -32,7 +34,6 @@ class WorkflowDefinitionControllerTest {
 
   @Test
   void shouldCreateWorkflowDefinitionSuccessfully() throws Exception {
-
     CreateWorkflowDefinitionRequest request =
         new CreateWorkflowDefinitionRequest(
             "ORDER_WORKFLOW",
@@ -59,5 +60,63 @@ class WorkflowDefinitionControllerTest {
     then(workflowDefinitionService)
         .should()
         .createWorkflow(any(CreateWorkflowDefinitionRequest.class));
+  }
+
+  @Test
+  void shouldActivateWorkflowSuccessfully() throws Exception {
+    ActivateWorkflowRequest request = new ActivateWorkflowRequest("ORDER_WORKFLOW", 2);
+
+    mockMvc
+        .perform(
+            post("/api/v1/workflows/activate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isOk());
+
+    then(workflowDefinitionService).should().activateWorkflow(any(ActivateWorkflowRequest.class));
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenWorkflowNameIsBlankForActivate() throws Exception {
+    ActivateWorkflowRequest request = new ActivateWorkflowRequest("", 1);
+
+    mockMvc
+        .perform(
+            post("/api/v1/workflows/activate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isBadRequest());
+
+    then(workflowDefinitionService).shouldHaveNoInteractions();
+  }
+
+  @Test
+  void shouldDeactivateWorkflowSuccessfully() throws Exception {
+    DeactivateWorkflowRequest request = new DeactivateWorkflowRequest("ORDER_WORKFLOW");
+
+    mockMvc
+        .perform(
+            post("/api/v1/workflows/deactivate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isOk());
+
+    then(workflowDefinitionService)
+        .should()
+        .deactivateWorkflow(any(DeactivateWorkflowRequest.class));
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenWorkflowNameIsBlankForDeactivate() throws Exception {
+    DeactivateWorkflowRequest request = new DeactivateWorkflowRequest("");
+
+    mockMvc
+        .perform(
+            post("/api/v1/workflows/deactivate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isBadRequest());
+
+    then(workflowDefinitionService).shouldHaveNoInteractions();
   }
 }

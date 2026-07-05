@@ -2,19 +2,23 @@ package orchestrator.workflow.service;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.*;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import orchestrator.common.exception.InvalidWorkflowDefinitionException;
+import orchestrator.common.exception.WorkflowDefinitionNotFoundException;
+import orchestrator.workflow.dto.request.ActivateWorkflowRequest;
 import orchestrator.workflow.dto.request.CreateWorkflowDefinitionRequest;
 import orchestrator.workflow.dto.request.CreateWorkflowStepRequest;
+import orchestrator.workflow.dto.request.DeactivateWorkflowRequest;
 import orchestrator.workflow.dto.response.CreateWorkflowDefinitionResponse;
 import orchestrator.workflow.entity.WorkflowDefinitionEntity;
 import orchestrator.workflow.entity.WorkflowStepEntity;
+import orchestrator.workflow.enums.WorkflowDefinitionStatus;
 import orchestrator.workflow.repository.WorkflowDefinitionRepository;
 import orchestrator.workflow.repository.WorkflowStepRepository;
 import org.junit.jupiter.api.Test;
@@ -86,7 +90,11 @@ class WorkflowDefinitionServiceImplTest {
         .willReturn(
             Optional.of(
                 new WorkflowDefinitionEntity(
-                    UUID.randomUUID(), 1, "ORDER_WORKFLOW", "Order processing V1")));
+                    UUID.randomUUID(),
+                    1,
+                    "ORDER_WORKFLOW",
+                    "Order processing V1",
+                    WorkflowDefinitionStatus.INACTIVE)));
 
     CreateWorkflowDefinitionResponse response = workflowDefinitionService.createWorkflow(request);
 
@@ -203,5 +211,149 @@ class WorkflowDefinitionServiceImplTest {
 
     verifyNoInteractions(workflowDefinitionRepository);
     verifyNoInteractions(workflowStepRepository);
+  }
+
+  @Test
+  void shouldActivateWorkflowSuccessfully() {
+    ActivateWorkflowRequest request = new ActivateWorkflowRequest("ORDER_WORKFLOW", 2);
+
+    WorkflowDefinitionEntity requested =
+        new WorkflowDefinitionEntity(
+            UUID.randomUUID(), 2, "ORDER_WORKFLOW", "V2", WorkflowDefinitionStatus.INACTIVE);
+
+    WorkflowDefinitionEntity active =
+        new WorkflowDefinitionEntity(
+            UUID.randomUUID(), 1, "ORDER_WORKFLOW", "V1", WorkflowDefinitionStatus.ACTIVE);
+
+    given(workflowDefinitionRepository.findByNameAndDefinitionVersion("ORDER_WORKFLOW", 2))
+        .willReturn(Optional.of(requested));
+
+    given(
+            workflowDefinitionRepository.findByNameAndStatus(
+                "ORDER_WORKFLOW", WorkflowDefinitionStatus.ACTIVE))
+        .willReturn(Optional.of(active));
+
+    workflowDefinitionService.activateWorkflow(request);
+
+    assertThat(active.getStatus()).isEqualTo(WorkflowDefinitionStatus.INACTIVE);
+    assertThat(requested.getStatus()).isEqualTo(WorkflowDefinitionStatus.ACTIVE);
+
+    verify(workflowDefinitionRepository).save(active);
+    verify(workflowDefinitionRepository).save(requested);
+  }
+
+  @Test
+  void shouldActivateWorkflowWhenNoActiveVersionExists() {
+    ActivateWorkflowRequest request = new ActivateWorkflowRequest("ORDER_WORKFLOW", 1);
+
+    WorkflowDefinitionEntity requested =
+        new WorkflowDefinitionEntity(
+            UUID.randomUUID(), 1, "ORDER_WORKFLOW", "V1", WorkflowDefinitionStatus.INACTIVE);
+
+    given(workflowDefinitionRepository.findByNameAndDefinitionVersion("ORDER_WORKFLOW", 1))
+        .willReturn(Optional.of(requested));
+
+    given(
+            workflowDefinitionRepository.findByNameAndStatus(
+                "ORDER_WORKFLOW", WorkflowDefinitionStatus.ACTIVE))
+        .willReturn(Optional.empty());
+
+    workflowDefinitionService.activateWorkflow(request);
+
+    assertThat(requested.getStatus()).isEqualTo(WorkflowDefinitionStatus.ACTIVE);
+
+    verify(workflowDefinitionRepository).save(requested);
+    verify(workflowDefinitionRepository, never())
+        .save(argThat(entity -> entity.getDefinitionVersion() != 1));
+  }
+
+  @Test
+  void shouldReturnWhenWorkflowAlreadyActive() {
+    ActivateWorkflowRequest request = new ActivateWorkflowRequest("ORDER_WORKFLOW", 2);
+
+    WorkflowDefinitionEntity requested =
+        new WorkflowDefinitionEntity(
+            UUID.randomUUID(), 2, "ORDER_WORKFLOW", "V2", WorkflowDefinitionStatus.ACTIVE);
+
+    given(workflowDefinitionRepository.findByNameAndDefinitionVersion("ORDER_WORKFLOW", 2))
+        .willReturn(Optional.of(requested));
+
+    workflowDefinitionService.activateWorkflow(request);
+
+    verify(workflowDefinitionRepository, never()).findByNameAndStatus(any(), any());
+    verify(workflowDefinitionRepository, never()).save(any());
+  }
+
+  @Test
+  void shouldThrowWhenWorkflowDefinitionDoesNotExist() {
+    ActivateWorkflowRequest request = new ActivateWorkflowRequest("ORDER_WORKFLOW", 10);
+
+    given(workflowDefinitionRepository.findByNameAndDefinitionVersion("ORDER_WORKFLOW", 10))
+        .willReturn(Optional.empty());
+
+    assertThrows(
+        WorkflowDefinitionNotFoundException.class,
+        () -> workflowDefinitionService.activateWorkflow(request));
+
+    verify(workflowDefinitionRepository, never()).findByNameAndStatus(any(), any());
+    verify(workflowDefinitionRepository, never()).save(any());
+  }
+
+  @Test
+  void shouldDeactivateWorkflowSuccessfully() {
+    DeactivateWorkflowRequest request = new DeactivateWorkflowRequest("ORDER_WORKFLOW");
+
+    WorkflowDefinitionEntity latest =
+        new WorkflowDefinitionEntity(
+            UUID.randomUUID(), 2, "ORDER_WORKFLOW", "V2", WorkflowDefinitionStatus.ACTIVE);
+
+    given(workflowDefinitionRepository.findTopByNameOrderByDefinitionVersionDesc("ORDER_WORKFLOW"))
+        .willReturn(Optional.of(latest));
+    given(
+            workflowDefinitionRepository.findByNameAndStatus(
+                "ORDER_WORKFLOW", WorkflowDefinitionStatus.ACTIVE))
+        .willReturn(Optional.of(latest));
+
+    workflowDefinitionService.deactivateWorkflow(request);
+
+    assertThat(latest.getStatus()).isEqualTo(WorkflowDefinitionStatus.INACTIVE);
+
+    verify(workflowDefinitionRepository).save(latest);
+  }
+
+  @Test
+  void shouldReturnWhenWorkflowAlreadyInactive() {
+    DeactivateWorkflowRequest request = new DeactivateWorkflowRequest("ORDER_WORKFLOW");
+
+    WorkflowDefinitionEntity latest =
+        new WorkflowDefinitionEntity(
+            UUID.randomUUID(), 2, "ORDER_WORKFLOW", "V2", WorkflowDefinitionStatus.INACTIVE);
+
+    given(workflowDefinitionRepository.findTopByNameOrderByDefinitionVersionDesc("ORDER_WORKFLOW"))
+        .willReturn(Optional.of(latest));
+
+    given(
+            workflowDefinitionRepository.findByNameAndStatus(
+                "ORDER_WORKFLOW", WorkflowDefinitionStatus.ACTIVE))
+        .willReturn(Optional.empty());
+
+    workflowDefinitionService.deactivateWorkflow(request);
+
+    verify(workflowDefinitionRepository, never()).save(any());
+  }
+
+  @Test
+  void shouldThrowWhenWorkflowDoesNotExistDuringDeactivation() {
+    DeactivateWorkflowRequest request = new DeactivateWorkflowRequest("ORDER_WORKFLOW");
+
+    given(workflowDefinitionRepository.findTopByNameOrderByDefinitionVersionDesc("ORDER_WORKFLOW"))
+        .willReturn(Optional.empty());
+
+    assertThrows(
+        WorkflowDefinitionNotFoundException.class,
+        () -> workflowDefinitionService.deactivateWorkflow(request));
+
+    verify(workflowDefinitionRepository, never()).findByNameAndStatus(any(), any());
+    verify(workflowDefinitionRepository, never()).save(any());
   }
 }
