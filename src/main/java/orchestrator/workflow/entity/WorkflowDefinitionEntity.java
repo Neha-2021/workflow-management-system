@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.UUID;
 import orchestrator.common.entity.BaseEntity;
+import orchestrator.workflow.enums.WorkflowDefinitionStatus;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -24,9 +25,18 @@ public class WorkflowDefinitionEntity extends BaseEntity {
 
   @NotNull @LastModifiedDate private Instant updatedAt;
 
+  @NotNull
+  @Enumerated(EnumType.STRING)
+  private WorkflowDefinitionStatus status;
+
   public WorkflowDefinitionEntity(
-      UUID workflowId, Integer definitionVersion, String name, String description) {
+      UUID workflowId,
+      Integer definitionVersion,
+      String name,
+      String description,
+      WorkflowDefinitionStatus status) {
     this.name = name;
+    this.status = status;
     this.setId(workflowId);
     this.definitionVersion = definitionVersion;
     this.description = description;
@@ -62,5 +72,13 @@ public class WorkflowDefinitionEntity extends BaseEntity {
 
   public Instant getUpdatedAt() {
     return updatedAt;
+  }
+
+  public WorkflowDefinitionStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(WorkflowDefinitionStatus status) {
+    this.status = status;
   }
 }
