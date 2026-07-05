@@ -4,9 +4,15 @@ Requirement: The client wants to register a new workflow definition.
 
 The request contains steps.
 
+Description: Create a new workflow definition with version 1 or version 2 (if a workflow definition with same name
+exists with version 1). Also, create steps after validating sequence numbers. Return the id of the workflow definition
+created with version.
+
 ## Contract:
+
 API: `POST /api/v1/workflow`
 Request:
+
 ```
 {
   "name": "ORDER_PROCESSING",
@@ -29,7 +35,9 @@ Request:
   ]
 }
 ```
-Response: 
+
+Response:
+
 ```
 201 Created
 {
