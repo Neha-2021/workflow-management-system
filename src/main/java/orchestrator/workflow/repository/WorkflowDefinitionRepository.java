@@ -15,4 +15,7 @@ public interface WorkflowDefinitionRepository
 
   Optional<WorkflowDefinitionEntity> findByNameAndStatus(
       String name, WorkflowDefinitionStatus status);
+
+  Optional<WorkflowDefinitionEntity> findTopByNameAndStatusOrderByDefinitionVersionDesc(
+      String name, WorkflowDefinitionStatus status);
 }
