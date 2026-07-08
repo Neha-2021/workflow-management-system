@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.UUID;
 import orchestrator.common.entity.BaseEntity;
 import orchestrator.execution.entity.enums.StepStatus;
+import org.springframework.data.annotation.CreatedDate;
 
 @Entity
 @Table(name = "step_execution")
@@ -29,6 +30,7 @@ public class StepExecutionEntity extends BaseEntity {
 
   @Column(nullable = false)
   @NotNull
+  @CreatedDate
   private Instant startedAt;
 
   private Instant completedAt;
@@ -36,7 +38,18 @@ public class StepExecutionEntity extends BaseEntity {
   @Column(columnDefinition = "TEXT")
   private String errorMessage;
 
-  protected StepExecutionEntity() {}
+  public StepExecutionEntity(
+      UUID id,
+      UUID workflowExecutionId,
+      UUID workflowStepId,
+      StepStatus status,
+      Integer retryCount) {
+    this.setId(id);
+    this.workflowExecutionId = workflowExecutionId;
+    this.workflowStepId = workflowStepId;
+    this.status = status;
+    this.retryCount = retryCount;
+  }
 
   public void setWorkflowExecutionId(UUID workflowExecutionId) {
     this.workflowExecutionId = workflowExecutionId;

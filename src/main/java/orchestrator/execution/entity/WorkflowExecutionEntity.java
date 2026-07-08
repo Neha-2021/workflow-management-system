@@ -9,6 +9,7 @@ import orchestrator.common.entity.BaseEntity;
 import orchestrator.common.enums.WorkflowStatus;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
 
 @Entity
 @Table(name = "workflow_execution")
@@ -27,12 +28,17 @@ public class WorkflowExecutionEntity extends BaseEntity {
 
   @Column(nullable = false)
   @NotNull
+  @CreatedDate
   private Instant startedAt;
 
   private Instant completedAt;
 
-  protected WorkflowExecutionEntity() {
-    // repository usage
+  public WorkflowExecutionEntity(
+      UUID id, UUID workflowDefinitionId, JsonNode input, WorkflowStatus status) {
+    this.setId(id);
+    this.workflowDefinitionId = workflowDefinitionId;
+    this.input = input;
+    this.status = status;
   }
 
   public void setWorkflowDefinitionId(UUID workflowDefinitionId) {
