@@ -1,6 +1,11 @@
 ### Workflow Orchestrator
 
+Build a Temporal-inspired workflow orchestration engine in Java and Spring Boot supporting versioned workflow
+definition, asynchronous execution, pluggable activities, persistent execution state and sequential activity
+orchestration.
+
 ## Functional requirements
+
 1. Create a workflow definition
 2. Persist in PostgreSQL
 3. Start a workflow engine
@@ -9,6 +14,7 @@
 6. Expose APIs to view execution state
 
 ## Tech stack
+
 * Java 21
 * Spring Boot 4
 * PostgreSQL
