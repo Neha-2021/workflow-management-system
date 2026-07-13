@@ -10,7 +10,9 @@ import orchestrator.common.enums.WorkflowStatus;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "workflow_execution")
 public class WorkflowExecutionEntity extends BaseEntity {

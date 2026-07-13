@@ -8,7 +8,9 @@ import java.util.UUID;
 import orchestrator.common.entity.BaseEntity;
 import orchestrator.execution.entity.enums.StepStatus;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "step_execution")
 public class StepExecutionEntity extends BaseEntity {
