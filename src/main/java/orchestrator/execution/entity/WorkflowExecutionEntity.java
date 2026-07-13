@@ -33,6 +33,8 @@ public class WorkflowExecutionEntity extends BaseEntity {
 
   private Instant completedAt;
 
+  protected WorkflowExecutionEntity() {}
+
   public WorkflowExecutionEntity(
       UUID id, UUID workflowDefinitionId, JsonNode input, WorkflowStatus status) {
     this.setId(id);

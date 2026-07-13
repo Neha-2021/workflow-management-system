@@ -29,6 +29,10 @@ public class WorkflowDefinitionEntity extends BaseEntity {
   @Enumerated(EnumType.STRING)
   private WorkflowDefinitionStatus status;
 
+  protected WorkflowDefinitionEntity() {
+    // Required by JPA
+  }
+
   public WorkflowDefinitionEntity(
       UUID workflowId,
       Integer definitionVersion,

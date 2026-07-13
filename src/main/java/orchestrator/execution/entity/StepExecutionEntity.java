@@ -38,6 +38,10 @@ public class StepExecutionEntity extends BaseEntity {
   @Column(columnDefinition = "TEXT")
   private String errorMessage;
 
+  protected StepExecutionEntity() {
+    // required by JPA
+  }
+
   public StepExecutionEntity(
       UUID id,
       UUID workflowExecutionId,
