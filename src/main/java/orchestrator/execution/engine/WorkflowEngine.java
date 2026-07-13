@@ -1,5 +1,6 @@
 package orchestrator.execution.engine;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import orchestrator.common.exception.WorkflowExecutionNotFoundException;
@@ -9,6 +10,7 @@ import orchestrator.execution.activity.ActivityRegistry;
 import orchestrator.execution.activity.ActivityResult;
 import orchestrator.execution.entity.StepExecutionEntity;
 import orchestrator.execution.entity.WorkflowExecutionEntity;
+import orchestrator.execution.entity.enums.StepStatus;
 import orchestrator.execution.repository.StepExecutionRepository;
 import orchestrator.execution.repository.WorkflowExecutionRepository;
 import orchestrator.workflow.entity.WorkflowStepEntity;
@@ -53,12 +55,48 @@ public class WorkflowEngine {
     Activity activity = activityRegistry.getActivity(workflowStepEntity.getActivityName());
     log.info("WorkflowEngine | Proceeding to execute activity: {}", activity.getName());
 
-    ActivityResult activityResult = activity.execute(workflowExecutionEntity.getInput());
+    markStepRunning(stepExecutionEntity);
 
-    log.info(
-        "WorkflowEngine | Activity {} executed, result: {}",
-        workflowStepEntity.getActivityName(),
-        activityResult.isSuccess() ? "SUCCESS" : "FAILED");
+    ActivityResult activityResult;
+
+    try {
+      activityResult = activity.execute(workflowExecutionEntity.getInput());
+    } catch (Exception e) {
+      log.warn("WorkflowEngine | Activity {} failed", workflowStepEntity.getActivityName(), e);
+      markStepFailed(stepExecutionEntity, e.getMessage());
+      return;
+    }
+
+    if (activityResult.isSuccess()) {
+      log.info(
+          "WorkflowEngine | Activity {} executed, result: SUCCESS",
+          workflowStepEntity.getActivityName());
+      markStepCompleted(stepExecutionEntity);
+    } else {
+      log.warn(
+          "WorkflowEngine | Activity {} executed, result: FAILED, err: {}",
+          workflowStepEntity.getActivityName(),
+          activityResult.errorMessage());
+      markStepFailed(stepExecutionEntity, activityResult.errorMessage());
+    }
+  }
+
+  private void markStepRunning(StepExecutionEntity stepExecutionEntity) {
+    stepExecutionEntity.setStatus(StepStatus.RUNNING);
+    stepExecutionRepository.save(stepExecutionEntity);
+  }
+
+  private void markStepCompleted(StepExecutionEntity stepExecutionEntity) {
+    stepExecutionEntity.setStatus(StepStatus.SUCCESS);
+    stepExecutionEntity.setCompletedAt(Instant.now());
+    stepExecutionRepository.save(stepExecutionEntity);
+  }
+
+  private void markStepFailed(StepExecutionEntity stepExecutionEntity, String errorMessage) {
+    stepExecutionEntity.setStatus(StepStatus.FAILED);
+    stepExecutionEntity.setErrorMessage(errorMessage);
+    stepExecutionEntity.setCompletedAt(Instant.now());
+    stepExecutionRepository.save(stepExecutionEntity);
   }
 
   private StepExecutionEntity findStepExecutionEntityElseThrowException(UUID stepExecutionId) {
