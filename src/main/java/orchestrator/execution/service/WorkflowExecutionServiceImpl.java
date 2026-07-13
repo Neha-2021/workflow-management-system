@@ -62,8 +62,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       throw new WorkflowDefinitionNotFoundException(
           String.format("No active workflow definition found by name: '%s'", workflowName));
     }
-    log.info(
-        "WorkflowExecutionServiceImpl | Active workflow found: {}", existingWorkflowEntity.get());
+    log.info("WorkflowExecutionServiceImpl | Active workflow found");
 
     Optional<WorkflowStepEntity> existingWorkflowStepEntity =
         workflowStepRepository.findByWorkflowDefinitionIdAndSequenceNumber(
