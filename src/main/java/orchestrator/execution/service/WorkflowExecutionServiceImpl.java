@@ -11,6 +11,7 @@ import orchestrator.execution.dto.response.StartWorkflowExecutionResponse;
 import orchestrator.execution.entity.StepExecutionEntity;
 import orchestrator.execution.entity.WorkflowExecutionEntity;
 import orchestrator.execution.entity.enums.StepStatus;
+import orchestrator.execution.queue.ExecutionQueue;
 import orchestrator.execution.repository.StepExecutionRepository;
 import orchestrator.execution.repository.WorkflowExecutionRepository;
 import orchestrator.workflow.entity.WorkflowDefinitionEntity;
@@ -29,6 +30,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   private final StepExecutionRepository stepExecutionRepository;
   private final WorkflowDefinitionRepository workflowDefinitionRepository;
   private final WorkflowStepRepository workflowStepRepository;
+  private final ExecutionQueue executionQueue;
 
   private static final Logger log = LoggerFactory.getLogger(WorkflowExecutionServiceImpl.class);
 
@@ -36,11 +38,13 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       WorkflowExecutionRepository workflowExecutionRepository,
       StepExecutionRepository stepExecutionRepository,
       WorkflowStepRepository workflowStepRepository,
-      WorkflowDefinitionRepository workflowDefinitionRepository) {
+      WorkflowDefinitionRepository workflowDefinitionRepository,
+      ExecutionQueue executionQueue) {
     this.workflowExecutionRepository = workflowExecutionRepository;
     this.stepExecutionRepository = stepExecutionRepository;
     this.workflowStepRepository = workflowStepRepository;
     this.workflowDefinitionRepository = workflowDefinitionRepository;
+    this.executionQueue = executionQueue;
   }
 
   @Transactional
@@ -83,6 +87,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         buildStepExecutionEntity(workflowExecutionId, existingWorkflowStepEntity.get());
 
     persistExecution(workflowExecutionEntity, stepExecutionEntity);
+
+    executionQueue.submit(stepExecutionEntity.getId());
 
     return new StartWorkflowExecutionResponse(workflowExecutionId, WorkflowStatus.RUNNING);
   }

@@ -18,6 +18,7 @@ import orchestrator.execution.dto.response.StartWorkflowExecutionResponse;
 import orchestrator.execution.entity.StepExecutionEntity;
 import orchestrator.execution.entity.WorkflowExecutionEntity;
 import orchestrator.execution.entity.enums.StepStatus;
+import orchestrator.execution.queue.ExecutionQueue;
 import orchestrator.execution.repository.StepExecutionRepository;
 import orchestrator.execution.repository.WorkflowExecutionRepository;
 import orchestrator.workflow.entity.WorkflowDefinitionEntity;
@@ -41,6 +42,8 @@ class WorkflowExecutionServiceImplTest {
   @Mock private StepExecutionRepository stepExecutionRepository;
 
   @Mock private WorkflowExecutionRepository workflowExecutionRepository;
+
+  @Mock private ExecutionQueue executionQueue;
 
   @InjectMocks private WorkflowExecutionServiceImpl workflowExecutionService;
 
@@ -86,6 +89,7 @@ class WorkflowExecutionServiceImplTest {
 
     verify(workflowExecutionRepository).save(any(WorkflowExecutionEntity.class));
     verify(stepExecutionRepository).save(any(StepExecutionEntity.class));
+    verify(executionQueue).submit(any());
   }
 
   @Test
@@ -191,5 +195,7 @@ class WorkflowExecutionServiceImplTest {
     assertThat(step.getWorkflowStepId()).isEqualTo(workflowStepId);
     assertThat(step.getStatus()).isEqualTo(StepStatus.PENDING);
     assertThat(step.getRetryCount()).isZero();
+
+    verify(executionQueue).submit(step.getId());
   }
 }
