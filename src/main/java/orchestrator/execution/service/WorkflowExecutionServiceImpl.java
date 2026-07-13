@@ -11,7 +11,6 @@ import orchestrator.execution.dto.response.StartWorkflowExecutionResponse;
 import orchestrator.execution.entity.StepExecutionEntity;
 import orchestrator.execution.entity.WorkflowExecutionEntity;
 import orchestrator.execution.entity.enums.StepStatus;
-import orchestrator.execution.queue.ExecutionQueue;
 import orchestrator.execution.repository.StepExecutionRepository;
 import orchestrator.execution.repository.WorkflowExecutionRepository;
 import orchestrator.workflow.entity.WorkflowDefinitionEntity;
@@ -19,6 +18,7 @@ import orchestrator.workflow.entity.WorkflowStepEntity;
 import orchestrator.workflow.enums.WorkflowDefinitionStatus;
 import orchestrator.workflow.repository.WorkflowDefinitionRepository;
 import orchestrator.workflow.repository.WorkflowStepRepository;
+import orchestrator.workflow.service.publisher.ExecutionPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -30,7 +30,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   private final StepExecutionRepository stepExecutionRepository;
   private final WorkflowDefinitionRepository workflowDefinitionRepository;
   private final WorkflowStepRepository workflowStepRepository;
-  private final ExecutionQueue executionQueue;
+  private final ExecutionPublisher executionPublisher;
 
   private static final Logger log = LoggerFactory.getLogger(WorkflowExecutionServiceImpl.class);
 
@@ -39,12 +39,12 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       StepExecutionRepository stepExecutionRepository,
       WorkflowStepRepository workflowStepRepository,
       WorkflowDefinitionRepository workflowDefinitionRepository,
-      ExecutionQueue executionQueue) {
+      ExecutionPublisher executionPublisher) {
     this.workflowExecutionRepository = workflowExecutionRepository;
     this.stepExecutionRepository = stepExecutionRepository;
     this.workflowStepRepository = workflowStepRepository;
     this.workflowDefinitionRepository = workflowDefinitionRepository;
-    this.executionQueue = executionQueue;
+    this.executionPublisher = executionPublisher;
   }
 
   @Transactional
@@ -88,7 +88,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     persistExecution(workflowExecutionEntity, stepExecutionEntity);
 
-    executionQueue.submit(stepExecutionEntity.getId());
+    executionPublisher.publish(stepExecutionEntity.getId());
 
     return new StartWorkflowExecutionResponse(workflowExecutionId, WorkflowStatus.RUNNING);
   }

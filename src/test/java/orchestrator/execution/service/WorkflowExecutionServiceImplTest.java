@@ -18,7 +18,6 @@ import orchestrator.execution.dto.response.StartWorkflowExecutionResponse;
 import orchestrator.execution.entity.StepExecutionEntity;
 import orchestrator.execution.entity.WorkflowExecutionEntity;
 import orchestrator.execution.entity.enums.StepStatus;
-import orchestrator.execution.queue.ExecutionQueue;
 import orchestrator.execution.repository.StepExecutionRepository;
 import orchestrator.execution.repository.WorkflowExecutionRepository;
 import orchestrator.workflow.entity.WorkflowDefinitionEntity;
@@ -26,6 +25,7 @@ import orchestrator.workflow.entity.WorkflowStepEntity;
 import orchestrator.workflow.enums.WorkflowDefinitionStatus;
 import orchestrator.workflow.repository.WorkflowDefinitionRepository;
 import orchestrator.workflow.repository.WorkflowStepRepository;
+import orchestrator.workflow.service.publisher.ExecutionPublisher;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -43,7 +43,7 @@ class WorkflowExecutionServiceImplTest {
 
   @Mock private WorkflowExecutionRepository workflowExecutionRepository;
 
-  @Mock private ExecutionQueue executionQueue;
+  @Mock private ExecutionPublisher executionPublisher;
 
   @InjectMocks private WorkflowExecutionServiceImpl workflowExecutionService;
 
@@ -89,7 +89,7 @@ class WorkflowExecutionServiceImplTest {
 
     verify(workflowExecutionRepository).save(any(WorkflowExecutionEntity.class));
     verify(stepExecutionRepository).save(any(StepExecutionEntity.class));
-    verify(executionQueue).submit(any());
+    verify(executionPublisher).publish(any());
   }
 
   @Test
@@ -196,6 +196,6 @@ class WorkflowExecutionServiceImplTest {
     assertThat(step.getStatus()).isEqualTo(StepStatus.PENDING);
     assertThat(step.getRetryCount()).isZero();
 
-    verify(executionQueue).submit(step.getId());
+    verify(executionPublisher).publish(step.getId());
   }
 }
