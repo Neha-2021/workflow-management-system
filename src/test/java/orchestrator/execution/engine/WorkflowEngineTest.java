@@ -10,7 +10,6 @@ import static org.mockito.Mockito.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import orchestrator.common.enums.WorkflowStatus;
@@ -25,11 +24,12 @@ import orchestrator.execution.entity.WorkflowExecutionEntity;
 import orchestrator.execution.entity.enums.StepStatus;
 import orchestrator.execution.repository.StepExecutionRepository;
 import orchestrator.execution.repository.WorkflowExecutionRepository;
+import orchestrator.execution.service.WorkflowExecutionStateService;
 import orchestrator.workflow.entity.WorkflowStepEntity;
 import orchestrator.workflow.repository.WorkflowStepRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -45,6 +45,8 @@ class WorkflowEngineTest {
   @Mock private ActivityRegistry activityRegistry;
 
   @Mock private Activity activity;
+
+  @Mock private WorkflowExecutionStateService workflowExecutionStateService;
 
   @InjectMocks private WorkflowEngine workflowEngine;
 
@@ -79,16 +81,11 @@ class WorkflowEngineTest {
 
     workflowEngine.execute(stepExecutionId);
 
-    ArgumentCaptor<StepExecutionEntity> captor = ArgumentCaptor.forClass(StepExecutionEntity.class);
-
-    verify(stepExecutionRepository, times(2)).save(captor.capture());
-
-    List<StepExecutionEntity> savedEntities = captor.getAllValues();
-
-    assertThat(savedEntities.get(1).getStatus()).isEqualTo(StepStatus.SUCCESS);
-    assertThat(savedEntities.get(1).getCompletedAt()).isNotNull();
-
-    then(activity).should().execute(input);
+    InOrder inOrder = inOrder(workflowExecutionStateService, activity);
+    inOrder.verify(workflowExecutionStateService).markRunning(stepExecution);
+    inOrder.verify(activity).execute(input);
+    inOrder.verify(workflowExecutionStateService).markSuccess(stepExecution);
+    inOrder.verify(workflowExecutionStateService).scheduleNextStep(workflowExecution, workflowStep);
   }
 
   @Test
@@ -105,6 +102,7 @@ class WorkflowEngineTest {
     assertThat(exception.getMessage()).contains(stepExecutionId.toString());
 
     verifyNoInteractions(workflowStepRepository, workflowExecutionRepository, activityRegistry);
+    verifyNoInteractions(workflowExecutionStateService);
   }
 
   @Test
@@ -129,6 +127,7 @@ class WorkflowEngineTest {
     assertThat(exception.getMessage()).contains(workflowStepId.toString());
 
     verifyNoInteractions(workflowExecutionRepository, activityRegistry);
+    verifyNoInteractions(workflowExecutionStateService);
   }
 
   @Test
@@ -160,6 +159,7 @@ class WorkflowEngineTest {
     assertThat(exception.getMessage()).contains(workflowExecutionId.toString());
 
     verifyNoInteractions(activityRegistry);
+    verifyNoInteractions(workflowExecutionStateService);
   }
 
   @Test
@@ -192,10 +192,9 @@ class WorkflowEngineTest {
 
     workflowEngine.execute(stepExecutionId);
 
-    verify(stepExecutionRepository, times(2)).save(any(StepExecutionEntity.class));
-
     then(activityRegistry).should().getActivity(ActivityNames.VALIDATE_ORDER);
     then(activity).should().execute(any());
+    then(workflowExecutionStateService).should().markRunning(stepExecution);
   }
 
   @Test
@@ -228,14 +227,14 @@ class WorkflowEngineTest {
 
     workflowEngine.execute(stepExecutionId);
 
-    ArgumentCaptor<StepExecutionEntity> captor = ArgumentCaptor.forClass(StepExecutionEntity.class);
+    InOrder inOrder = inOrder(workflowExecutionStateService, activity);
+    inOrder.verify(workflowExecutionStateService).markRunning(stepExecution);
+    inOrder.verify(activity).execute(any());
+    inOrder.verify(workflowExecutionStateService).markFailed(stepExecution, "Validation failed");
 
-    verify(stepExecutionRepository, times(2)).save(captor.capture());
-
-    List<StepExecutionEntity> entities = captor.getAllValues();
-    assertThat(entities.get(1).getStatus()).isEqualTo(StepStatus.FAILED);
-    assertThat(entities.get(1).getErrorMessage()).isEqualTo("Validation failed");
-    assertThat(entities.get(1).getCompletedAt()).isNotNull();
+    then(workflowExecutionStateService)
+        .should(never())
+        .scheduleNextStep(any(WorkflowExecutionEntity.class), any(WorkflowStepEntity.class));
   }
 
   @Test
@@ -268,13 +267,13 @@ class WorkflowEngineTest {
 
     workflowEngine.execute(stepExecutionId);
 
-    ArgumentCaptor<StepExecutionEntity> captor = ArgumentCaptor.forClass(StepExecutionEntity.class);
+    InOrder inOrder = inOrder(workflowExecutionStateService, activity);
+    inOrder.verify(workflowExecutionStateService).markRunning(stepExecution);
+    inOrder.verify(activity).execute(any());
+    inOrder.verify(workflowExecutionStateService).markFailed(stepExecution, "Boom");
 
-    verify(stepExecutionRepository, times(2)).save(captor.capture());
-
-    StepExecutionEntity failedStep = captor.getAllValues().get(1);
-
-    assertThat(failedStep.getStatus()).isEqualTo(StepStatus.FAILED);
-    assertThat(failedStep.getErrorMessage()).contains("Boom");
+    then(workflowExecutionStateService)
+        .should(never())
+        .scheduleNextStep(any(WorkflowExecutionEntity.class), any(WorkflowStepEntity.class));
   }
 }
