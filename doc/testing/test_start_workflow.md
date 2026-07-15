@@ -13,7 +13,7 @@ curl --request POST \
 }'
 ```
 
-Expected Request:
+Expected Response (Asynchronous): 
 ```
 202 Accepted
 {
@@ -21,3 +21,5 @@ Expected Request:
 	"status": "RUNNING"
 }
 ```
+
+Activities: VALIDATE_ORDER and PROCESS_PAYMENT was completed successfully, hence ORDER_WORKFLOW was completed. 
