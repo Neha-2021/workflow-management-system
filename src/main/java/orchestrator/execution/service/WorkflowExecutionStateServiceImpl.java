@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import orchestrator.common.enums.WorkflowStatus;
+import orchestrator.common.exception.WorkflowStepNotFoundException;
 import orchestrator.execution.entity.StepExecutionEntity;
 import orchestrator.execution.entity.WorkflowExecutionEntity;
 import orchestrator.execution.entity.enums.StepStatus;
@@ -39,42 +40,41 @@ public class WorkflowExecutionStateServiceImpl implements WorkflowExecutionState
   }
 
   @Override
-  public void markRunning(StepExecutionEntity stepExecution) {
+  public void markRunning(UUID stepExecutionId) {
     log.info(
-        "WorkflowExecutionStateServiceImpl | Marking step execution running: {}",
-        stepExecution.getId());
-    stepExecution.setStatus(StepStatus.RUNNING);
-    stepExecutionRepository.save(stepExecution);
+        "WorkflowExecutionStateServiceImpl | Marking step execution running: {}", stepExecutionId);
+    StepExecutionEntity currentStepExecution = findCurrentStepExecution(stepExecutionId);
+    currentStepExecution.setStatus(StepStatus.RUNNING);
+    stepExecutionRepository.save(currentStepExecution);
     log.info(
-        "WorkflowExecutionStateServiceImpl | Step execution marked running: {}",
-        stepExecution.getId());
+        "WorkflowExecutionStateServiceImpl | Step execution marked running: {}", stepExecutionId);
   }
 
   @Override
-  public void markSuccess(StepExecutionEntity stepExecution) {
+  public void markSuccess(UUID stepExecutionId) {
     log.info(
         "WorkflowExecutionStateServiceImpl | Marking step execution successful: {}",
-        stepExecution.getId());
-    stepExecution.setStatus(StepStatus.SUCCESS);
-    stepExecution.setCompletedAt(Instant.now());
-    stepExecutionRepository.save(stepExecution);
+        stepExecutionId);
+    StepExecutionEntity currentStepExecution = findCurrentStepExecution(stepExecutionId);
+    currentStepExecution.setStatus(StepStatus.SUCCESS);
+    currentStepExecution.setCompletedAt(Instant.now());
+    stepExecutionRepository.save(currentStepExecution);
     log.info(
         "WorkflowExecutionStateServiceImpl | Step execution marked successful: {}",
-        stepExecution.getId());
+        stepExecutionId);
   }
 
   @Override
-  public void markFailed(StepExecutionEntity stepExecution, String errorMessage) {
+  public void markFailed(UUID stepExecutionId, String errorMessage) {
     log.info(
-        "WorkflowExecutionStateServiceImpl | Marking step execution failed: {}",
-        stepExecution.getId());
-    stepExecution.setStatus(StepStatus.FAILED);
-    stepExecution.setErrorMessage(errorMessage);
-    stepExecution.setCompletedAt(Instant.now());
-    stepExecutionRepository.save(stepExecution);
+        "WorkflowExecutionStateServiceImpl | Marking step execution failed: {}", stepExecutionId);
+    StepExecutionEntity currentStepExecution = findCurrentStepExecution(stepExecutionId);
+    currentStepExecution.setStatus(StepStatus.FAILED);
+    currentStepExecution.setErrorMessage(errorMessage);
+    currentStepExecution.setCompletedAt(Instant.now());
+    stepExecutionRepository.save(currentStepExecution);
     log.info(
-        "WorkflowExecutionStateServiceImpl | Step execution marked failed: {}",
-        stepExecution.getId());
+        "WorkflowExecutionStateServiceImpl | Step execution marked failed: {}", stepExecutionId);
   }
 
   @Transactional
@@ -121,5 +121,14 @@ public class WorkflowExecutionStateServiceImpl implements WorkflowExecutionState
     log.info(
         "WorkflowExecutionStateServiceImpl | Workflow execution marked completed: {}",
         workflowExecution.getId());
+  }
+
+  private StepExecutionEntity findCurrentStepExecution(UUID stepExecutionId) {
+    return stepExecutionRepository
+        .findById(stepExecutionId)
+        .orElseThrow(
+            () ->
+                new WorkflowStepNotFoundException(
+                    String.format("Step execution not found by '%s'", stepExecutionId)));
   }
 }

@@ -57,7 +57,7 @@ public class WorkflowEngine {
     Activity activity = activityRegistry.getActivity(workflowStepEntity.getActivityName());
     log.info("WorkflowEngine | Proceeding to execute activity: {}", activity.getName());
 
-    workflowExecutionStateService.markRunning(stepExecutionEntity);
+    workflowExecutionStateService.markRunning(stepExecutionId);
 
     ActivityResult activityResult;
 
@@ -65,7 +65,7 @@ public class WorkflowEngine {
       activityResult = activity.execute(workflowExecutionEntity.getInput());
     } catch (Exception e) {
       log.warn("WorkflowEngine | Activity {} failed", workflowStepEntity.getActivityName(), e);
-      workflowExecutionStateService.markFailed(stepExecutionEntity, e.getMessage());
+      workflowExecutionStateService.markFailed(stepExecutionId, e.getMessage());
       return;
     }
 
@@ -73,14 +73,14 @@ public class WorkflowEngine {
       log.info(
           "WorkflowEngine | Activity {} executed, result: SUCCESS",
           workflowStepEntity.getActivityName());
-      workflowExecutionStateService.markSuccess(stepExecutionEntity);
+      workflowExecutionStateService.markSuccess(stepExecutionId);
       workflowExecutionStateService.scheduleNextStep(workflowExecutionEntity, workflowStepEntity);
     } else {
       log.warn(
           "WorkflowEngine | Activity {} executed, result: FAILED, err: {}",
           workflowStepEntity.getActivityName(),
           activityResult.errorMessage());
-      workflowExecutionStateService.markFailed(stepExecutionEntity, activityResult.errorMessage());
+      workflowExecutionStateService.markFailed(stepExecutionId, activityResult.errorMessage());
     }
   }
 

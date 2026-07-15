@@ -82,9 +82,9 @@ class WorkflowEngineTest {
     workflowEngine.execute(stepExecutionId);
 
     InOrder inOrder = inOrder(workflowExecutionStateService, activity);
-    inOrder.verify(workflowExecutionStateService).markRunning(stepExecution);
+    inOrder.verify(workflowExecutionStateService).markRunning(stepExecutionId);
     inOrder.verify(activity).execute(input);
-    inOrder.verify(workflowExecutionStateService).markSuccess(stepExecution);
+    inOrder.verify(workflowExecutionStateService).markSuccess(stepExecutionId);
     inOrder.verify(workflowExecutionStateService).scheduleNextStep(workflowExecution, workflowStep);
   }
 
@@ -194,7 +194,7 @@ class WorkflowEngineTest {
 
     then(activityRegistry).should().getActivity(ActivityNames.VALIDATE_ORDER);
     then(activity).should().execute(any());
-    then(workflowExecutionStateService).should().markRunning(stepExecution);
+    then(workflowExecutionStateService).should().markRunning(stepExecutionId);
   }
 
   @Test
@@ -228,9 +228,9 @@ class WorkflowEngineTest {
     workflowEngine.execute(stepExecutionId);
 
     InOrder inOrder = inOrder(workflowExecutionStateService, activity);
-    inOrder.verify(workflowExecutionStateService).markRunning(stepExecution);
+    inOrder.verify(workflowExecutionStateService).markRunning(stepExecutionId);
     inOrder.verify(activity).execute(any());
-    inOrder.verify(workflowExecutionStateService).markFailed(stepExecution, "Validation failed");
+    inOrder.verify(workflowExecutionStateService).markFailed(stepExecutionId, "Validation failed");
 
     then(workflowExecutionStateService)
         .should(never())
@@ -268,9 +268,9 @@ class WorkflowEngineTest {
     workflowEngine.execute(stepExecutionId);
 
     InOrder inOrder = inOrder(workflowExecutionStateService, activity);
-    inOrder.verify(workflowExecutionStateService).markRunning(stepExecution);
+    inOrder.verify(workflowExecutionStateService).markRunning(stepExecutionId);
     inOrder.verify(activity).execute(any());
-    inOrder.verify(workflowExecutionStateService).markFailed(stepExecution, "Boom");
+    inOrder.verify(workflowExecutionStateService).markFailed(stepExecutionId, "Boom");
 
     then(workflowExecutionStateService)
         .should(never())

@@ -38,35 +38,63 @@ class WorkflowExecutionStateServiceImplTest {
 
   @Test
   void shouldMarkStepRunning() {
-    StepExecutionEntity stepExecution = buildStepExecution();
+    UUID stepExecutionId = UUID.randomUUID();
+    StepExecutionEntity currentStepExecution = buildStepExecution(stepExecutionId);
+    given(stepExecutionRepository.findById(stepExecutionId))
+        .willReturn(Optional.of(currentStepExecution));
 
-    workflowExecutionStateService.markRunning(stepExecution);
+    workflowExecutionStateService.markRunning(stepExecutionId);
 
-    assertThat(stepExecution.getStatus()).isEqualTo(StepStatus.RUNNING);
-    verify(stepExecutionRepository).save(stepExecution);
+    assertThat(currentStepExecution.getStatus()).isEqualTo(StepStatus.RUNNING);
+    verify(stepExecutionRepository).save(currentStepExecution);
   }
 
   @Test
   void shouldMarkStepSuccess() {
-    StepExecutionEntity stepExecution = buildStepExecution();
+    UUID stepExecutionId = UUID.randomUUID();
+    StepExecutionEntity currentStepExecution = buildStepExecution(stepExecutionId);
+    given(stepExecutionRepository.findById(stepExecutionId))
+        .willReturn(Optional.of(currentStepExecution));
 
-    workflowExecutionStateService.markSuccess(stepExecution);
+    workflowExecutionStateService.markSuccess(stepExecutionId);
 
-    assertThat(stepExecution.getStatus()).isEqualTo(StepStatus.SUCCESS);
-    assertThat(stepExecution.getCompletedAt()).isNotNull();
-    verify(stepExecutionRepository).save(stepExecution);
+    assertThat(currentStepExecution.getStatus()).isEqualTo(StepStatus.SUCCESS);
+    assertThat(currentStepExecution.getCompletedAt()).isNotNull();
+    verify(stepExecutionRepository).save(currentStepExecution);
   }
 
   @Test
   void shouldMarkStepFailed() {
-    StepExecutionEntity stepExecution = buildStepExecution();
+    UUID stepExecutionId = UUID.randomUUID();
+    StepExecutionEntity currentStepExecution = buildStepExecution(stepExecutionId);
+    given(stepExecutionRepository.findById(stepExecutionId))
+        .willReturn(Optional.of(currentStepExecution));
 
-    workflowExecutionStateService.markFailed(stepExecution, "Validation failed");
+    workflowExecutionStateService.markFailed(stepExecutionId, "Validation failed");
 
-    assertThat(stepExecution.getStatus()).isEqualTo(StepStatus.FAILED);
-    assertThat(stepExecution.getErrorMessage()).isEqualTo("Validation failed");
-    assertThat(stepExecution.getCompletedAt()).isNotNull();
-    verify(stepExecutionRepository).save(stepExecution);
+    assertThat(currentStepExecution.getStatus()).isEqualTo(StepStatus.FAILED);
+    assertThat(currentStepExecution.getErrorMessage()).isEqualTo("Validation failed");
+    assertThat(currentStepExecution.getCompletedAt()).isNotNull();
+    verify(stepExecutionRepository).save(currentStepExecution);
+  }
+
+  @Test
+  void shouldReloadStepExecutionForEachTransition() {
+    UUID stepExecutionId = UUID.randomUUID();
+    StepExecutionEntity runningStepExecution = buildStepExecution(stepExecutionId);
+    StepExecutionEntity successfulStepExecution = buildStepExecution(stepExecutionId);
+
+    given(stepExecutionRepository.findById(stepExecutionId))
+        .willReturn(Optional.of(runningStepExecution), Optional.of(successfulStepExecution));
+
+    workflowExecutionStateService.markRunning(stepExecutionId);
+    workflowExecutionStateService.markSuccess(stepExecutionId);
+
+    assertThat(runningStepExecution.getStatus()).isEqualTo(StepStatus.RUNNING);
+    assertThat(successfulStepExecution.getStatus()).isEqualTo(StepStatus.SUCCESS);
+    assertThat(successfulStepExecution.getCompletedAt()).isNotNull();
+    verify(stepExecutionRepository).save(runningStepExecution);
+    verify(stepExecutionRepository).save(successfulStepExecution);
   }
 
   @Test
@@ -142,8 +170,7 @@ class WorkflowExecutionStateServiceImplTest {
     verifyNoInteractions(executionPublisher);
   }
 
-  private StepExecutionEntity buildStepExecution() {
-    return new StepExecutionEntity(
-        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), StepStatus.PENDING, 0);
+  private StepExecutionEntity buildStepExecution(UUID id) {
+    return new StepExecutionEntity(id, UUID.randomUUID(), UUID.randomUUID(), StepStatus.PENDING, 0);
   }
 }
