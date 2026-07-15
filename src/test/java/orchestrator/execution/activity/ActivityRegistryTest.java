@@ -29,6 +29,23 @@ class ActivityRegistryTest {
   }
 
   @Test
+  void shouldResolveOrderWorkflowActivities() {
+    ProcessPaymentActivityImpl processPaymentActivity = new ProcessPaymentActivityImpl();
+    NotifyCustomerActivityImpl notifyCustomerActivity = new NotifyCustomerActivityImpl();
+    SendEmailActivityImpl sendEmailActivity = new SendEmailActivityImpl();
+
+    ActivityRegistry registry =
+        new ActivityRegistry(
+            List.of(processPaymentActivity, notifyCustomerActivity, sendEmailActivity));
+
+    assertThat(registry.getActivity(ActivityNames.PROCESS_PAYMENT))
+        .isEqualTo(processPaymentActivity);
+    assertThat(registry.getActivity(ActivityNames.NOTIFY_CUSTOMER))
+        .isEqualTo(notifyCustomerActivity);
+    assertThat(registry.getActivity(ActivityNames.SEND_EMAIL)).isEqualTo(sendEmailActivity);
+  }
+
+  @Test
   void shouldThrowWhenActivityNotRegistered() {
 
     ActivityRegistry registry = new ActivityRegistry(List.of());
