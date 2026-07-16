@@ -10,37 +10,7 @@ The project currently focuses on a single-node execution model with PostgreSQL p
 
 ## Architecture Diagram
 
-```text
-Client
-  |
-  | REST API
-  v
-Workflow Controllers
-  |
-  v
-Workflow Definition Service ------> PostgreSQL
-  |
-  v
-Workflow Execution Service -------> PostgreSQL
-  |
-  v
-Transactional Execution Publisher
-  |
-  v
-In-Memory Execution Queue
-  |
-  v
-Workflow Worker
-  |
-  v
-Workflow Engine
-  |
-  v
-Activity Registry
-  |
-  v
-Registered Activities
-```
+![Workflow Orchestrator architecture](doc/ArchitectureDiagram.png)
 
 ## Tech Stack
 
