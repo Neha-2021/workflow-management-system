@@ -16,7 +16,7 @@
          Publish Execution Task
                      │
                      ▼
-      Return executionId immediately (202 Accepted)
+      Return workflowExecutionId immediately (202 Accepted)
 ```
 
 ## API Contract:
@@ -43,7 +43,7 @@ Response:
 ```
 202 Accepted
 {
-    "executionId": "...",
+    "workflowExecutionId": "...",
     "status": "RUNNING"
 }
 ```

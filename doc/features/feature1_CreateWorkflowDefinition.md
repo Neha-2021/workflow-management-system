@@ -10,7 +10,7 @@ created with version.
 
 ## Contract:
 
-API: `POST /api/v1/workflow`
+API: `POST /api/v1/workflows`
 Request:
 
 ```

@@ -34,14 +34,14 @@ V2  INACTIVE
 V3  ACTIVE
 ```
 
-API: `POST /api/v1/workflow/activate`
+API: `POST /api/v1/workflows/activate`
 
 Request:
 
 ```
 {
     "workflowName": "ORDER_PROCESSING",
-    "version": "3"
+    "version": 3
 }
 ```
 
@@ -82,7 +82,7 @@ V2  INACTIVE
 V3  INACTIVE
 ```
 
-API: `POST /api/v1/workflow/deactivate`
+API: `POST /api/v1/workflows/deactivate`
 
 Request:
 
@@ -97,4 +97,3 @@ Response:
 ```
 200 OK
 ```
-
