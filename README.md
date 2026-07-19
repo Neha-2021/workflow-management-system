@@ -6,7 +6,7 @@ Workflow Orchestrator is a Temporal-inspired workflow orchestration engine built
 It supports versioned workflow definitions, activation and deactivation of workflow versions, asynchronous execution, 
 pluggable activities, persistent execution state, and sequential activity orchestration.
 
-The project currently focuses on a single-node execution model with PostgreSQL persistence and an in-memory queue.
+The project persists workflow state in PostgreSQL and dispatches workflow step execution through Kafka for durable, asynchronous processing.
 
 ## Architecture Diagram
 
@@ -18,7 +18,9 @@ The project currently focuses on a single-node execution model with PostgreSQL p
 - Spring Boot 3
 - Spring Web
 - Spring Data JPA
+- Spring Kafka
 - PostgreSQL
+- Kafka
 - Flyway
 - Docker and Docker Compose
 - Gradle
@@ -35,6 +37,8 @@ The project currently focuses on a single-node execution model with PostgreSQL p
 - Deactivate workflows to prevent new executions.
 - Start workflow executions asynchronously.
 - Persist workflow and step execution state.
+- Publish step execution events to Kafka.
+- Consume Kafka events and execute workflow steps.
 - Execute registered activities in sequence.
 - Progress to the next step after successful activity execution.
 - Mark workflow execution as completed when the final step succeeds.
@@ -48,10 +52,11 @@ Detailed API contracts are maintained in `doc/features`:
 - [Activate and deactivate workflow](doc/features/feature2_CreateAPIsToActivateAndDeactiveWorkflow.md)
 - [Start async workflow execution](doc/features/feature3_StartAsyncWorkflowExecution.md)
 - [In-memory execution engine](doc/features/feature3.1_InMemoryExecutionEngine.md)
+- [Replace in-memory queue with Kafka](doc/features/feature4_ReplaceInMemoryQueueWithKafka.md)
 
 ## How To Run Locally
 
-Start PostgreSQL:
+Start PostgreSQL and Kafka:
 
 ```bash
 make docker-up
@@ -75,10 +80,16 @@ Run clean build with formatting:
 make clean-build
 ```
 
-View Docker Compose logs:
+View application logs:
 
 ```bash
 make logs
+```
+
+View Docker Compose logs:
+
+```bash
+make docker-logs
 ```
 
 Stop Docker Compose services:
@@ -124,22 +135,22 @@ Current registered activity names:
 
 ## Future Roadmap
 
-### Sprint 6 - Retry Mechanism
+### Sprint 6 - Durable Activity Queue
+
+Replace the in-memory execution queue with Kafka so workflow step execution is durable and can be processed by multiple worker instances.
+
+### Sprint 7 - Retry Mechanism
 
 Implement configurable retry policies, including fixed and exponential backoff, for failed activities. Track retry count and automatically re-queue failed steps until the retry limit is reached.
 
-### Sprint 7 - Timeouts & Failure Handling
+### Sprint 8 - Timeouts & Failure Handling
 
 Add activity timeout support to automatically fail long-running steps and update workflow state based on timeout or unrecoverable failures.
 
-### Sprint 8 - Workflow Recovery
+### Sprint 9 - Workflow Recovery
 
 Enable recovery of in-flight workflows after application restarts by resuming unfinished step executions persisted in the database.
 
-### Sprint 9 - Workflow Scheduling
+### Sprint 10 - Workflow Scheduling
 
 Support scheduled workflow execution, including one-time and recurring executions, using a scheduler that triggers workflows based on configured execution times.
-
-### Sprint 10 - Distributed Execution
-
-Replace the in-memory execution queue with Kafka to enable horizontally scalable workers, distributed execution, and higher throughput.
