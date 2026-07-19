@@ -1,7 +1,7 @@
 package orchestrator.workflow.service.publisher;
 
 import java.util.UUID;
-import orchestrator.execution.queue.ExecutionQueue;
+import orchestrator.execution.dispatcher.StepExecutionDispatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -9,10 +9,10 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Component
 public class TransactionalExecutionPublisher implements ExecutionPublisher {
 
-  private final ExecutionQueue executionQueue;
+  private final StepExecutionDispatcher stepExecutionDispatcher;
 
-  public TransactionalExecutionPublisher(ExecutionQueue executionQueue) {
-    this.executionQueue = executionQueue;
+  public TransactionalExecutionPublisher(StepExecutionDispatcher stepExecutionDispatcher) {
+    this.stepExecutionDispatcher = stepExecutionDispatcher;
   }
 
   @Override
@@ -24,12 +24,12 @@ public class TransactionalExecutionPublisher implements ExecutionPublisher {
           new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-              executionQueue.submit(stepExecutionId);
+              stepExecutionDispatcher.dispatch(stepExecutionId);
             }
           });
 
     } else {
-      executionQueue.submit(stepExecutionId);
+      stepExecutionDispatcher.dispatch(stepExecutionId);
     }
   }
 }
