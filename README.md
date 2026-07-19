@@ -10,7 +10,7 @@ The project persists workflow state in PostgreSQL and dispatches workflow step e
 
 ## Architecture Diagram
 
-![Workflow Orchestrator architecture](doc/ArchitectureDiagram.png)
+![Workflow Orchestrator architecture](doc/diagrams/ArchitectureDiagramWithKafka.png)
 
 ## Tech Stack
 
